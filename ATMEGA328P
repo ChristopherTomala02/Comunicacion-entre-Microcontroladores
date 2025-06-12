@@ -1,32 +1,50 @@
+/*
+ * Deber3.c
+ *
+ * Created: 09/06/2025 20:45:15
+ * Author : aleja
+ */ 
+
 #define F_CPU 8000000
 #include <avr/io.h>
 #include <util/delay.h>
 
-// Direcciones
+// Constantes de dirección
 #define DIR_DERECHA 0
 #define DIR_ABAJO 1
 #define DIR_IZQUIERDA 2
 #define DIR_ARRIBA 3
 
-// Posiciones de la serpiente
+// Posición inicial serpiente
 uint8_t cabeza_x = 2, cabeza_y = 2;
 uint8_t cuerpo_x = 1, cuerpo_y = 2;
 uint8_t cola_x = 0, cola_y = 2;
 uint8_t direccion = DIR_DERECHA;
 
-// Posiciones de las manzanas
+// Posición manzanas
 uint8_t manzana1_x = 5, manzana1_y = 5;
 uint8_t manzana2_x = 7, manzana2_y = 7;
-uint8_t manzana3_x = 0, manzana3_y = 0;  // Nueva manzana
+uint8_t manzana3_x = 0, manzana3_y = 0;
+uint8_t manzana4_x = 0, manzana4_y = 0;  // Nueva manzana para nivel 3
 uint8_t manzana1_estado = 1;
 uint8_t manzana2_estado = 1;
 uint8_t manzana3_estado = 0;
+uint8_t manzana4_estado = 0;  // Estado inicial inactivo
 
-void mostrar_numero_2(void) {
-	// Espera de 2 segundos
-	_delay_ms(2000);
+// Velocidad del juego
+uint8_t tiempo = 25;
 
-	// Actualizar la ubicación de las manzanas después de mostrar el número
+// Variables control niveles
+uint8_t nivel_actual = 1;
+
+void nivel_2(void) {
+	// Pausa antes del nivel 2
+	_delay_ms(500);
+
+	// Aumenta velocidad
+	tiempo = tiempo / 2;
+
+	// Nueva posición manzanas nivel 2
 	manzana1_x = 2;
 	manzana1_y = 1;
 	manzana1_estado = 1;
@@ -35,52 +53,98 @@ void mostrar_numero_2(void) {
 	manzana2_y = 4;
 	manzana2_estado = 1;
 
-	// Agregar tercera manzana
+	// Activa tercera manzana
 	manzana3_x = 3;
 	manzana3_y = 7;
 	manzana3_estado = 1;
+	
+	nivel_actual = 2;
+}
+
+void nivel_3(void) {
+	// Pausa antes del nivel 3
+	_delay_ms(500);
+
+	// Aumenta velocidad 
+	tiempo = tiempo / 2;
+
+	// Nueva posición manzanas
+	manzana1_x = 1;
+	manzana1_y = 3;
+	manzana1_estado = 1;
+	
+	manzana2_x = 4;
+	manzana2_y = 6;
+	manzana2_estado = 1;
+
+	manzana3_x = 7;
+	manzana3_y = 1;
+	manzana3_estado = 1;
+	
+	// Activa cuarta manzana
+	manzana4_x = 5;
+	manzana4_y = 2;
+	manzana4_estado = 1;
+	
+	nivel_actual = 3;
 }
 
 void mostrar_serpiente(void) {
+	
 	for (uint8_t i = 0; i < 3; i++) {
+		// Cabeza serpiente
 		PORTD = (1 << cabeza_y);
 		PORTB = ~(1 << cabeza_x);
 		_delay_us(300);
 		
+		// Cuerpo serpiente
 		PORTD = (1 << cuerpo_y);
 		PORTB = ~(1 << cuerpo_x);
 		_delay_us(300);
 		
+		// Cola serpiente
 		PORTD = (1 << cola_y);
 		PORTB = ~(1 << cola_x);
 		_delay_us(300);
 
+		// Manzana 1 activa
 		if (manzana1_estado) {
 			PORTD = (1 << manzana1_y);
 			PORTB = ~(1 << manzana1_x);
 			_delay_us(300);
 		}
 
+		// Manzana 2 activa
 		if (manzana2_estado) {
 			PORTD = (1 << manzana2_y);
 			PORTB = ~(1 << manzana2_x);
 			_delay_us(300);
 		}
 
+		// Manzana 3 activa
 		if (manzana3_estado) {
 			PORTD = (1 << manzana3_y);
 			PORTB = ~(1 << manzana3_x);
+			_delay_us(300);
+		}
+		
+		// Manzana 4 activa (solo en nivel 3)
+		if (manzana4_estado) {
+			PORTD = (1 << manzana4_y);
+			PORTB = ~(1 << manzana4_x);
 			_delay_us(300);
 		}
 	}
 }
 
 void mover_serpiente(void) {
+	// Guarda posición actual
 	uint8_t temp_cabeza_x = cabeza_x;
 	uint8_t temp_cabeza_y = cabeza_y;
 	uint8_t temp_cuerpo_x = cuerpo_x;
 	uint8_t temp_cuerpo_y = cuerpo_y;
 	
+	// Actualiza posición cabeza según dirección
 	switch (direccion) {
 		case DIR_DERECHA:
 		cabeza_x = (cabeza_x + 1) % 8;
@@ -96,18 +160,27 @@ void mover_serpiente(void) {
 		break;
 	}
 
+	// Serpiente come manzana 1
 	if (cabeza_x == manzana1_x && cabeza_y == manzana1_y && manzana1_estado) {
 		manzana1_estado = 0;
 	}
 
+	// Serpiente come manzana 2
 	if (cabeza_x == manzana2_x && cabeza_y == manzana2_y && manzana2_estado) {
 		manzana2_estado = 0;
 	}
 
+	// Serpiente come manzana 3
 	if (cabeza_x == manzana3_x && cabeza_y == manzana3_y && manzana3_estado) {
 		manzana3_estado = 0;
 	}
 	
+	// Serpiente come manzana 4
+	if (cabeza_x == manzana4_x && cabeza_y == manzana4_y && manzana4_estado) {
+		manzana4_estado = 0;
+	}
+	
+	// Actualiza posición cuerpo y cola
 	cuerpo_x = temp_cabeza_x;
 	cuerpo_y = temp_cabeza_y;
 	cola_x = temp_cuerpo_x;
@@ -115,9 +188,11 @@ void mover_serpiente(void) {
 }
 
 uint8_t leer_botones(void) {
+	// Estado previo botones
 	static uint8_t estado_anterior = 0x0F;
 	static uint8_t contador_debounce = 0;
 	
+	// Estado actual botones
 	uint8_t estado_actual = PINC & 0x0F;
 	
 	uint8_t botones_presionados = (~estado_actual) & estado_anterior;
@@ -163,24 +238,33 @@ void cambiar_direccion(uint8_t nueva_direccion) {
 }
 
 int main(void) {
+	// Configuración puertos
 	DDRB = 0xFF;
 	DDRD = 0xFF;
 	DDRC = 0x00;
 	PORTC = 0x0F;
 
+	// Variables control juego
 	uint16_t contador = 0;
-	uint8_t mostrar_numero = 0;
-	uint8_t numero_mostrado = 0;
+	uint8_t cambiar_nivel = 0;
 
 	while (1) {
-		if (mostrar_numero && !numero_mostrado) {
-			mostrar_numero_2();
-			numero_mostrado = 1;
+		// Transición entre niveles
+		if (cambiar_nivel) {
+			if (nivel_actual == 1) {
+				nivel_2();
+				} else if (nivel_actual == 2) {
+				nivel_3();
+			}
+			cambiar_nivel = 0;
 			} else {
+			// Muestra elementos juego
 			mostrar_serpiente();
 			
+			// Lee estado botones
 			uint8_t botones = leer_botones();
 			
+			// Control dirección serpiente
 			if (botones & 0x01) {
 				cambiar_direccion(DIR_ABAJO);
 			}
@@ -195,12 +279,23 @@ int main(void) {
 			}
 			
 			contador++;
-			if (contador >= 25) {
+			if (contador >= tiempo) {
 				contador = 0;
 				mover_serpiente();
 				
-				if (!manzana1_estado && !manzana2_estado) {
-					mostrar_numero = 1;
+				// Nivel 1 a 2
+				if (nivel_actual == 1 && !manzana1_estado && !manzana2_estado) {
+					cambiar_nivel = 1;
+				}
+				
+				// Nivel 2 a 3
+				if (nivel_actual == 2 && !manzana1_estado && !manzana2_estado && !manzana3_estado) {
+					cambiar_nivel = 1;
+				}
+				
+
+				if (nivel_actual == 3 && !manzana1_estado && !manzana2_estado && !manzana3_estado && !manzana4_estado) {
+					//Completado
 				}
 			}
 		}
