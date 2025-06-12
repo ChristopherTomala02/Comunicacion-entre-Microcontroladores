@@ -1,0 +1,210 @@
+#define F_CPU 8000000
+#include <avr/io.h>
+#include <util/delay.h>
+
+// Direcciones
+#define DIR_DERECHA 0
+#define DIR_ABAJO 1
+#define DIR_IZQUIERDA 2
+#define DIR_ARRIBA 3
+
+// Posiciones de la serpiente
+uint8_t cabeza_x = 2, cabeza_y = 2;
+uint8_t cuerpo_x = 1, cuerpo_y = 2;
+uint8_t cola_x = 0, cola_y = 2;
+uint8_t direccion = DIR_DERECHA;
+
+// Posiciones de las manzanas
+uint8_t manzana1_x = 5, manzana1_y = 5;
+uint8_t manzana2_x = 7, manzana2_y = 7;
+uint8_t manzana3_x = 0, manzana3_y = 0;  // Nueva manzana
+uint8_t manzana1_estado = 1;
+uint8_t manzana2_estado = 1;
+uint8_t manzana3_estado = 0;
+
+void mostrar_numero_2(void) {
+	// Espera de 2 segundos
+	_delay_ms(2000);
+
+	// Actualizar la ubicación de las manzanas después de mostrar el número
+	manzana1_x = 2;
+	manzana1_y = 1;
+	manzana1_estado = 1;
+	
+	manzana2_x = 6;
+	manzana2_y = 4;
+	manzana2_estado = 1;
+
+	// Agregar tercera manzana
+	manzana3_x = 3;
+	manzana3_y = 7;
+	manzana3_estado = 1;
+}
+
+void mostrar_serpiente(void) {
+	for (uint8_t i = 0; i < 3; i++) {
+		PORTD = (1 << cabeza_y);
+		PORTB = ~(1 << cabeza_x);
+		_delay_us(300);
+		
+		PORTD = (1 << cuerpo_y);
+		PORTB = ~(1 << cuerpo_x);
+		_delay_us(300);
+		
+		PORTD = (1 << cola_y);
+		PORTB = ~(1 << cola_x);
+		_delay_us(300);
+
+		if (manzana1_estado) {
+			PORTD = (1 << manzana1_y);
+			PORTB = ~(1 << manzana1_x);
+			_delay_us(300);
+		}
+
+		if (manzana2_estado) {
+			PORTD = (1 << manzana2_y);
+			PORTB = ~(1 << manzana2_x);
+			_delay_us(300);
+		}
+
+		if (manzana3_estado) {
+			PORTD = (1 << manzana3_y);
+			PORTB = ~(1 << manzana3_x);
+			_delay_us(300);
+		}
+	}
+}
+
+void mover_serpiente(void) {
+	uint8_t temp_cabeza_x = cabeza_x;
+	uint8_t temp_cabeza_y = cabeza_y;
+	uint8_t temp_cuerpo_x = cuerpo_x;
+	uint8_t temp_cuerpo_y = cuerpo_y;
+	
+	switch (direccion) {
+		case DIR_DERECHA:
+		cabeza_x = (cabeza_x + 1) % 8;
+		break;
+		case DIR_ABAJO:
+		cabeza_y = (cabeza_y + 1) % 8;
+		break;
+		case DIR_IZQUIERDA:
+		cabeza_x = (cabeza_x == 0) ? 7 : cabeza_x - 1;
+		break;
+		case DIR_ARRIBA:
+		cabeza_y = (cabeza_y == 0) ? 7 : cabeza_y - 1;
+		break;
+	}
+
+	if (cabeza_x == manzana1_x && cabeza_y == manzana1_y && manzana1_estado) {
+		manzana1_estado = 0;
+	}
+
+	if (cabeza_x == manzana2_x && cabeza_y == manzana2_y && manzana2_estado) {
+		manzana2_estado = 0;
+	}
+
+	if (cabeza_x == manzana3_x && cabeza_y == manzana3_y && manzana3_estado) {
+		manzana3_estado = 0;
+	}
+	
+	cuerpo_x = temp_cabeza_x;
+	cuerpo_y = temp_cabeza_y;
+	cola_x = temp_cuerpo_x;
+	cola_y = temp_cuerpo_y;
+}
+
+uint8_t leer_botones(void) {
+	static uint8_t estado_anterior = 0x0F;
+	static uint8_t contador_debounce = 0;
+	
+	uint8_t estado_actual = PINC & 0x0F;
+	
+	uint8_t botones_presionados = (~estado_actual) & estado_anterior;
+	
+	if (botones_presionados) {
+		contador_debounce++;
+		if (contador_debounce > 2) {
+			contador_debounce = 0;
+			estado_anterior = estado_actual;
+			return botones_presionados;
+		}
+		} else {
+		contador_debounce = 0;
+		estado_anterior = estado_actual;
+	}
+	
+	return 0;
+}
+
+void cambiar_direccion(uint8_t nueva_direccion) {
+	switch (nueva_direccion) {
+		case DIR_DERECHA:
+		if (direccion != DIR_IZQUIERDA) {
+			direccion = DIR_DERECHA;
+		}
+		break;
+		case DIR_IZQUIERDA:
+		if (direccion != DIR_DERECHA) {
+			direccion = DIR_IZQUIERDA;
+		}
+		break;
+		case DIR_ARRIBA:
+		if (direccion != DIR_ABAJO) {
+			direccion = DIR_ARRIBA;
+		}
+		break;
+		case DIR_ABAJO:
+		if (direccion != DIR_ARRIBA) {
+			direccion = DIR_ABAJO;
+		}
+		break;
+	}
+}
+
+int main(void) {
+	DDRB = 0xFF;
+	DDRD = 0xFF;
+	DDRC = 0x00;
+	PORTC = 0x0F;
+
+	uint16_t contador = 0;
+	uint8_t mostrar_numero = 0;
+	uint8_t numero_mostrado = 0;
+
+	while (1) {
+		if (mostrar_numero && !numero_mostrado) {
+			mostrar_numero_2();
+			numero_mostrado = 1;
+			} else {
+			mostrar_serpiente();
+			
+			uint8_t botones = leer_botones();
+			
+			if (botones & 0x01) {
+				cambiar_direccion(DIR_ABAJO);
+			}
+			if (botones & 0x02) {
+				cambiar_direccion(DIR_ARRIBA);
+			}
+			if (botones & 0x04) {
+				cambiar_direccion(DIR_DERECHA);
+			}
+			if (botones & 0x08) {
+				cambiar_direccion(DIR_IZQUIERDA);
+			}
+			
+			contador++;
+			if (contador >= 25) {
+				contador = 0;
+				mover_serpiente();
+				
+				if (!manzana1_estado && !manzana2_estado) {
+					mostrar_numero = 1;
+				}
+			}
+		}
+	}
+	
+	return 0;
+}
