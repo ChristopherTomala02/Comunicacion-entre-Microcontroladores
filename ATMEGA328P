@@ -2,7 +2,7 @@
  * Deber3.c
  *
  * Created: 09/06/2025 20:45:15
- * Author : aleja
+ * Author : aleja - Franklin - Cristopher
  */ 
 
 #define F_CPU 8000000
@@ -37,269 +37,241 @@ uint8_t tiempo = 25;
 // Variables control niveles
 uint8_t nivel_actual = 1;
 
+// ========================
+// Mostrar número de nivel 
+// ========================
+void mostrar_numero_nivel(uint8_t nivel) {
+	// '1' 
+	const uint8_t digito1[8] = {0x10, 0x18, 0x10, 0x10, 0x10, 0x10, 0x7C, 0x00};
+	// '2'
+	const uint8_t digito2[8] = {0x38, 0x44, 0x40, 0x20, 0x18, 0x04, 0x7C, 0x00};
+	// '3'
+	const uint8_t digito3[8] = {0x38, 0x44, 0x40, 0x38, 0x40, 0x44, 0x38, 0x00};
+	const uint8_t *digito;
+
+	switch (nivel) {
+		case 1: digito = digito1; break;
+		case 2: digito = digito2; break;
+		case 3: digito = digito3; break;
+		default: digito = digito1; break;
+	}
+
+	for (uint16_t t = 0; t < 50; t++) {
+		for (uint8_t fila = 0; fila < 8; fila++) {
+			PORTD = (1 << fila);         
+			PORTB = ~digito[fila];       
+			_delay_us(300);
+		}
+	}
+	PORTB = 0xFF;
+	PORTD = 0x00;
+}
+
+// ========================
+// Reiniciar juego (reset a valores iniciales)
+// ========================
+void reiniciar_juego(void) {
+    cabeza_x = 2; cabeza_y = 2;
+    cuerpo_x = 1; cuerpo_y = 2;
+    cola_x = 0; cola_y = 2;
+    direccion = DIR_DERECHA;
+    manzana1_x = 5; manzana1_y = 5; manzana1_estado = 1;
+    manzana2_x = 7; manzana2_y = 7; manzana2_estado = 1;
+    manzana3_x = 0; manzana3_y = 0; manzana3_estado = 0;
+    manzana4_x = 0; manzana4_y = 0; manzana4_estado = 0;
+    tiempo = 25;
+    nivel_actual = 1;
+}
+
 void nivel_2(void) {
-	// Pausa antes del nivel 2
-	_delay_ms(500);
-
-	// Aumenta velocidad
-	tiempo = tiempo / 2;
-
-	// Nueva posición manzanas nivel 2
-	manzana1_x = 2;
-	manzana1_y = 1;
-	manzana1_estado = 1;
-	
-	manzana2_x = 6;
-	manzana2_y = 4;
-	manzana2_estado = 1;
-
-	// Activa tercera manzana
-	manzana3_x = 3;
-	manzana3_y = 7;
-	manzana3_estado = 1;
-	
-	nivel_actual = 2;
+    mostrar_numero_nivel(2);
+    tiempo = tiempo / 2;
+    manzana1_x = 2; manzana1_y = 1; manzana1_estado = 1;
+    manzana2_x = 6; manzana2_y = 4; manzana2_estado = 1;
+    manzana3_x = 3; manzana3_y = 7; manzana3_estado = 1;
+    nivel_actual = 2;
 }
 
 void nivel_3(void) {
-	// Pausa antes del nivel 3
-	_delay_ms(500);
-
-	// Aumenta velocidad 
-	tiempo = tiempo / 2;
-
-	// Nueva posición manzanas
-	manzana1_x = 1;
-	manzana1_y = 3;
-	manzana1_estado = 1;
-	
-	manzana2_x = 4;
-	manzana2_y = 6;
-	manzana2_estado = 1;
-
-	manzana3_x = 7;
-	manzana3_y = 1;
-	manzana3_estado = 1;
-	
-	// Activa cuarta manzana
-	manzana4_x = 5;
-	manzana4_y = 2;
-	manzana4_estado = 1;
-	
-	nivel_actual = 3;
+    mostrar_numero_nivel(3);
+    tiempo = tiempo / 2;
+    manzana1_x = 1; manzana1_y = 3; manzana1_estado = 1;
+    manzana2_x = 4; manzana2_y = 6; manzana2_estado = 1;
+    manzana3_x = 7; manzana3_y = 1; manzana3_estado = 1;
+    manzana4_x = 5; manzana4_y = 2; manzana4_estado = 1;
+    nivel_actual = 3;
 }
 
 void mostrar_serpiente(void) {
-	
-	for (uint8_t i = 0; i < 3; i++) {
-		// Cabeza serpiente
-		PORTD = (1 << cabeza_y);
-		PORTB = ~(1 << cabeza_x);
-		_delay_us(300);
-		
-		// Cuerpo serpiente
-		PORTD = (1 << cuerpo_y);
-		PORTB = ~(1 << cuerpo_x);
-		_delay_us(300);
-		
-		// Cola serpiente
-		PORTD = (1 << cola_y);
-		PORTB = ~(1 << cola_x);
-		_delay_us(300);
-
-		// Manzana 1 activa
-		if (manzana1_estado) {
-			PORTD = (1 << manzana1_y);
-			PORTB = ~(1 << manzana1_x);
-			_delay_us(300);
-		}
-
-		// Manzana 2 activa
-		if (manzana2_estado) {
-			PORTD = (1 << manzana2_y);
-			PORTB = ~(1 << manzana2_x);
-			_delay_us(300);
-		}
-
-		// Manzana 3 activa
-		if (manzana3_estado) {
-			PORTD = (1 << manzana3_y);
-			PORTB = ~(1 << manzana3_x);
-			_delay_us(300);
-		}
-		
-		// Manzana 4 activa (solo en nivel 3)
-		if (manzana4_estado) {
-			PORTD = (1 << manzana4_y);
-			PORTB = ~(1 << manzana4_x);
-			_delay_us(300);
-		}
-	}
+    for (uint8_t i = 0; i < 3; i++) {
+        PORTD = (1 << cabeza_y);
+        PORTB = ~(1 << cabeza_x);
+        _delay_us(300);
+        PORTD = (1 << cuerpo_y);
+        PORTB = ~(1 << cuerpo_x);
+        _delay_us(300);
+        PORTD = (1 << cola_y);
+        PORTB = ~(1 << cola_x);
+        _delay_us(300);
+        if (manzana1_estado) {
+            PORTD = (1 << manzana1_y);
+            PORTB = ~(1 << manzana1_x);
+            _delay_us(300);
+        }
+        if (manzana2_estado) {
+            PORTD = (1 << manzana2_y);
+            PORTB = ~(1 << manzana2_x);
+            _delay_us(300);
+        }
+        if (manzana3_estado) {
+            PORTD = (1 << manzana3_y);
+            PORTB = ~(1 << manzana3_x);
+            _delay_us(300);
+        }
+        if (manzana4_estado) {
+            PORTD = (1 << manzana4_y);
+            PORTB = ~(1 << manzana4_x);
+            _delay_us(300);
+        }
+    }
 }
 
 void mover_serpiente(void) {
-	// Guarda posición actual
-	uint8_t temp_cabeza_x = cabeza_x;
-	uint8_t temp_cabeza_y = cabeza_y;
-	uint8_t temp_cuerpo_x = cuerpo_x;
-	uint8_t temp_cuerpo_y = cuerpo_y;
-	
-	// Actualiza posición cabeza según dirección
-	switch (direccion) {
-		case DIR_DERECHA:
-		cabeza_x = (cabeza_x + 1) % 8;
-		break;
-		case DIR_ABAJO:
-		cabeza_y = (cabeza_y + 1) % 8;
-		break;
-		case DIR_IZQUIERDA:
-		cabeza_x = (cabeza_x == 0) ? 7 : cabeza_x - 1;
-		break;
-		case DIR_ARRIBA:
-		cabeza_y = (cabeza_y == 0) ? 7 : cabeza_y - 1;
-		break;
-	}
-
-	// Serpiente come manzana 1
-	if (cabeza_x == manzana1_x && cabeza_y == manzana1_y && manzana1_estado) {
-		manzana1_estado = 0;
-	}
-
-	// Serpiente come manzana 2
-	if (cabeza_x == manzana2_x && cabeza_y == manzana2_y && manzana2_estado) {
-		manzana2_estado = 0;
-	}
-
-	// Serpiente come manzana 3
-	if (cabeza_x == manzana3_x && cabeza_y == manzana3_y && manzana3_estado) {
-		manzana3_estado = 0;
-	}
-	
-	// Serpiente come manzana 4
-	if (cabeza_x == manzana4_x && cabeza_y == manzana4_y && manzana4_estado) {
-		manzana4_estado = 0;
-	}
-	
-	// Actualiza posición cuerpo y cola
-	cuerpo_x = temp_cabeza_x;
-	cuerpo_y = temp_cabeza_y;
-	cola_x = temp_cuerpo_x;
-	cola_y = temp_cuerpo_y;
+    uint8_t temp_cabeza_x = cabeza_x;
+    uint8_t temp_cabeza_y = cabeza_y;
+    uint8_t temp_cuerpo_x = cuerpo_x;
+    uint8_t temp_cuerpo_y = cuerpo_y;
+    switch (direccion) {
+        case DIR_DERECHA: cabeza_x = (cabeza_x + 1) % 8; break;
+        case DIR_ABAJO: cabeza_y = (cabeza_y + 1) % 8; break;
+        case DIR_IZQUIERDA: cabeza_x = (cabeza_x == 0) ? 7 : cabeza_x - 1; break;
+        case DIR_ARRIBA: cabeza_y = (cabeza_y == 0) ? 7 : cabeza_y - 1; break;
+    }
+    if (cabeza_x == manzana1_x && cabeza_y == manzana1_y && manzana1_estado) manzana1_estado = 0;
+    if (cabeza_x == manzana2_x && cabeza_y == manzana2_y && manzana2_estado) manzana2_estado = 0;
+    if (cabeza_x == manzana3_x && cabeza_y == manzana3_y && manzana3_estado) manzana3_estado = 0;
+    if (cabeza_x == manzana4_x && cabeza_y == manzana4_y && manzana4_estado) manzana4_estado = 0;
+    cuerpo_x = temp_cabeza_x;
+    cuerpo_y = temp_cabeza_y;
+    cola_x = temp_cuerpo_x;
+    cola_y = temp_cuerpo_y;
 }
 
 uint8_t leer_botones(void) {
-	// Estado previo botones
-	static uint8_t estado_anterior = 0x0F;
-	static uint8_t contador_debounce = 0;
-	
-	// Estado actual botones
-	uint8_t estado_actual = PINC & 0x0F;
-	
-	uint8_t botones_presionados = (~estado_actual) & estado_anterior;
-	
-	if (botones_presionados) {
-		contador_debounce++;
-		if (contador_debounce > 2) {
-			contador_debounce = 0;
-			estado_anterior = estado_actual;
-			return botones_presionados;
-		}
-		} else {
-		contador_debounce = 0;
-		estado_anterior = estado_actual;
-	}
-	
-	return 0;
+    static uint8_t estado_anterior = 0x0F;
+    static uint8_t contador_debounce = 0;
+    uint8_t estado_actual = PINC & 0x0F;
+    uint8_t botones_presionados = (~estado_actual) & estado_anterior;
+    if (botones_presionados) {
+        contador_debounce++;
+        if (contador_debounce > 2) {
+            contador_debounce = 0;
+            estado_anterior = estado_actual;
+            return botones_presionados;
+        }
+    } else {
+        contador_debounce = 0;
+        estado_anterior = estado_actual;
+    }
+    return 0;
 }
 
 void cambiar_direccion(uint8_t nueva_direccion) {
-	switch (nueva_direccion) {
-		case DIR_DERECHA:
-		if (direccion != DIR_IZQUIERDA) {
-			direccion = DIR_DERECHA;
-		}
-		break;
-		case DIR_IZQUIERDA:
-		if (direccion != DIR_DERECHA) {
-			direccion = DIR_IZQUIERDA;
-		}
-		break;
-		case DIR_ARRIBA:
-		if (direccion != DIR_ABAJO) {
-			direccion = DIR_ARRIBA;
-		}
-		break;
-		case DIR_ABAJO:
-		if (direccion != DIR_ARRIBA) {
-			direccion = DIR_ABAJO;
-		}
-		break;
-	}
+    switch (nueva_direccion) {
+        case DIR_DERECHA: if (direccion != DIR_IZQUIERDA) direccion = DIR_DERECHA; break;
+        case DIR_IZQUIERDA: if (direccion != DIR_DERECHA) direccion = DIR_IZQUIERDA; break;
+        case DIR_ARRIBA: if (direccion != DIR_ABAJO) direccion = DIR_ARRIBA; break;
+        case DIR_ABAJO: if (direccion != DIR_ARRIBA) direccion = DIR_ABAJO; break;
+    }
+}
+
+void todos_los_leds_on(void) {
+    // Prender todos los LEDs de la matriz para siempre (hasta reinicio)
+    while (1) {
+        PORTB = 0x00; // Todas las columnas activas (cátodo común)
+        PORTD = 0xFF; // Todas las filas activas
+        // Si presionan el botón de reinicio (PC4), sale del ciclo y reinicia el juego
+        if ((PINC & (1 << 4)) == 0) {
+            _delay_ms(80);
+            while ((PINC & (1 << 4)) == 0) {
+                // Mantener encendido hasta soltar
+            }
+            _delay_ms(80);
+            break;
+        }
+    }
+    PORTB = 0xFF;
+    PORTD = 0x00;
 }
 
 int main(void) {
-	// Configuración puertos
-	DDRB = 0xFF;
-	DDRD = 0xFF;
-	DDRC = 0x00;
-	PORTC = 0x0F;
+    DDRB = 0xFF;
+    DDRD = 0xFF;
+    DDRC = 0x00;
+    PORTC = 0x1F; // PC0-PC4 pull-up
 
-	// Variables control juego
-	uint16_t contador = 0;
-	uint8_t cambiar_nivel = 0;
+    // ---- Esperar inicio (PC4 presionado), mantén la matriz apagada ----
+    PORTB = 0xFF;
+    PORTD = 0x00;
+    while ((PINC & (1 << 4)) != 0) {
+        // No hagas nada, todo apagado hasta presionar iniciar
+    }
+    _delay_ms(80); // Antirebote
+    while ((PINC & (1 << 4)) == 0); // Esperar que lo suelten
+    _delay_ms(80);
 
-	while (1) {
-		// Transición entre niveles
-		if (cambiar_nivel) {
-			if (nivel_actual == 1) {
-				nivel_2();
-				} else if (nivel_actual == 2) {
-				nivel_3();
-			}
-			cambiar_nivel = 0;
-			} else {
-			// Muestra elementos juego
-			mostrar_serpiente();
-			
-			// Lee estado botones
-			uint8_t botones = leer_botones();
-			
-			// Control dirección serpiente
-			if (botones & 0x01) {
-				cambiar_direccion(DIR_ABAJO);
-			}
-			if (botones & 0x02) {
-				cambiar_direccion(DIR_ARRIBA);
-			}
-			if (botones & 0x04) {
-				cambiar_direccion(DIR_DERECHA);
-			}
-			if (botones & 0x08) {
-				cambiar_direccion(DIR_IZQUIERDA);
-			}
-			
-			contador++;
-			if (contador >= tiempo) {
-				contador = 0;
-				mover_serpiente();
-				
-				// Nivel 1 a 2
-				if (nivel_actual == 1 && !manzana1_estado && !manzana2_estado) {
-					cambiar_nivel = 1;
-				}
-				
-				// Nivel 2 a 3
-				if (nivel_actual == 2 && !manzana1_estado && !manzana2_estado && !manzana3_estado) {
-					cambiar_nivel = 1;
-				}
-				
+    reiniciar_juego();
+    mostrar_numero_nivel(1);
 
-				if (nivel_actual == 3 && !manzana1_estado && !manzana2_estado && !manzana3_estado && !manzana4_estado) {
-					//Completado
-				}
-			}
-		}
-	}
-	
-	return 0;
+    uint16_t contador = 0;
+    uint8_t cambiar_nivel = 0;
+
+    while (1) {
+        // --- Botón PC4 para reiniciar ---
+        if ((PINC & (1 << 4)) == 0) {
+            _delay_ms(80);
+            while ((PINC & (1 << 4)) == 0) {
+                // No muestres nada mientras está presionado para reinicio
+                PORTB = 0xFF;
+                PORTD = 0x00;
+            }
+            _delay_ms(80);
+            reiniciar_juego();
+            mostrar_numero_nivel(1);
+            contador = 0;
+            cambiar_nivel = 0;
+            continue;
+        }
+        // --------------------------------
+
+        if (cambiar_nivel) {
+            if (nivel_actual == 1) nivel_2();
+            else if (nivel_actual == 2) nivel_3();
+            cambiar_nivel = 0;
+        } else {
+            mostrar_serpiente();
+            uint8_t botones = leer_botones();
+            if (botones & 0x01) cambiar_direccion(DIR_ABAJO);
+            if (botones & 0x02) cambiar_direccion(DIR_ARRIBA);
+            if (botones & 0x04) cambiar_direccion(DIR_DERECHA);
+            if (botones & 0x08) cambiar_direccion(DIR_IZQUIERDA);
+            contador++;
+            if (contador >= tiempo) {
+                contador = 0;
+                mover_serpiente();
+                if (nivel_actual == 1 && !manzana1_estado && !manzana2_estado) cambiar_nivel = 1;
+                if (nivel_actual == 2 && !manzana1_estado && !manzana2_estado && !manzana3_estado) cambiar_nivel = 1;
+                if (nivel_actual == 3 && !manzana1_estado && !manzana2_estado && !manzana3_estado && !manzana4_estado) {
+                    // ------------------- FIN DEL JUEGO -------------------
+                    todos_los_leds_on();
+                    // Luego del reinicio, vuelve a mostrar el nivel 1
+                    reiniciar_juego();
+                    mostrar_numero_nivel(1);
+                    contador = 0;
+                    cambiar_nivel = 0;
+                }
+            }
+        }
+    }
+    return 0;
 }
