@@ -137,11 +137,12 @@ void mostrar_serpiente(void) {
 }
 
 void mover_serpiente(void) {
-    uint8_t temp_cabeza_x = cabeza_x;
+//Estas variables almacenan la posición anterior de la cabeza y el cuerpo antes del movimiento.
+    uint8_t temp_cabeza_x = cabeza_x; 
     uint8_t temp_cabeza_y = cabeza_y;
     uint8_t temp_cuerpo_x = cuerpo_x;
     uint8_t temp_cuerpo_y = cuerpo_y;
-    switch (direccion) {
+    switch (direccion) { //ajustadas al mod 8
         case DIR_DERECHA: cabeza_x = (cabeza_x + 1) % 8; break;
         case DIR_ABAJO: cabeza_y = (cabeza_y + 1) % 8; break;
         case DIR_IZQUIERDA: cabeza_x = (cabeza_x == 0) ? 7 : cabeza_x - 1; break;
