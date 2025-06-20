@@ -2,7 +2,7 @@
  * Deber3.c
  *
  * Created: 09/06/2025 20:45:15
- * Author : aleja - Franklin - Cristopher
+ * Author : David - Franklin - Cristopher
  */ 
 
 #define F_CPU 8000000
@@ -25,11 +25,11 @@ uint8_t direccion = DIR_DERECHA;
 uint8_t manzana1_x = 5, manzana1_y = 5;
 uint8_t manzana2_x = 7, manzana2_y = 7;
 uint8_t manzana3_x = 0, manzana3_y = 0;
-uint8_t manzana4_x = 0, manzana4_y = 0;  // Nueva manzana para nivel 3
+uint8_t manzana4_x = 0, manzana4_y = 0;
 uint8_t manzana1_estado = 1;
 uint8_t manzana2_estado = 1;
 uint8_t manzana3_estado = 0;
-uint8_t manzana4_estado = 0;  // Estado inicial inactivo
+uint8_t manzana4_estado = 0;
 
 // Velocidad del juego
 uint8_t tiempo = 25;
@@ -38,14 +38,28 @@ uint8_t tiempo = 25;
 uint8_t nivel_actual = 1;
 
 // ========================
+// Función para enviar múltiples pulsos
+// ========================
+void enviar_pulsos_sonido(uint8_t num_pulsos) {
+    for (uint8_t i = 0; i < num_pulsos; i++) {
+        PORTC |= (1 << 5);    // PC5 = HIGH
+        _delay_ms(50);        // Duración del pulso
+        PORTC &= ~(1 << 5);   // PC5 = LOW
+        _delay_ms(50);        // Espacio entre pulsos
+    }
+}
+
+// Función para enviar un pulso 
+void enviar_pulso_sonido(void) {
+    enviar_pulsos_sonido(1);  
+}
+
+// ========================
 // Mostrar número de nivel 
 // ========================
 void mostrar_numero_nivel(uint8_t nivel) {
-	// '1' 
 	const uint8_t digito1[8] = {0x10, 0x18, 0x10, 0x10, 0x10, 0x10, 0x7C, 0x00};
-	// '2'
 	const uint8_t digito2[8] = {0x38, 0x44, 0x40, 0x20, 0x18, 0x04, 0x7C, 0x00};
-	// '3'
 	const uint8_t digito3[8] = {0x38, 0x44, 0x40, 0x38, 0x40, 0x44, 0x38, 0x00};
 	const uint8_t *digito;
 
@@ -68,7 +82,7 @@ void mostrar_numero_nivel(uint8_t nivel) {
 }
 
 // ========================
-// Reiniciar juego (reset a valores iniciales)
+// Reiniciar juego
 // ========================
 void reiniciar_juego(void) {
     cabeza_x = 2; cabeza_y = 2;
@@ -137,21 +151,42 @@ void mostrar_serpiente(void) {
 }
 
 void mover_serpiente(void) {
-//Estas variables almacenan la posición anterior de la cabeza y el cuerpo antes del movimiento.
-    uint8_t temp_cabeza_x = cabeza_x; 
+    uint8_t temp_cabeza_x = cabeza_x;
     uint8_t temp_cabeza_y = cabeza_y;
     uint8_t temp_cuerpo_x = cuerpo_x;
     uint8_t temp_cuerpo_y = cuerpo_y;
-    switch (direccion) { //ajustadas al mod 8
+    uint8_t comio_manzana = 0;
+    
+    switch (direccion) {
         case DIR_DERECHA: cabeza_x = (cabeza_x + 1) % 8; break;
         case DIR_ABAJO: cabeza_y = (cabeza_y + 1) % 8; break;
         case DIR_IZQUIERDA: cabeza_x = (cabeza_x == 0) ? 7 : cabeza_x - 1; break;
         case DIR_ARRIBA: cabeza_y = (cabeza_y == 0) ? 7 : cabeza_y - 1; break;
     }
-    if (cabeza_x == manzana1_x && cabeza_y == manzana1_y && manzana1_estado) manzana1_estado = 0;
-    if (cabeza_x == manzana2_x && cabeza_y == manzana2_y && manzana2_estado) manzana2_estado = 0;
-    if (cabeza_x == manzana3_x && cabeza_y == manzana3_y && manzana3_estado) manzana3_estado = 0;
-    if (cabeza_x == manzana4_x && cabeza_y == manzana4_y && manzana4_estado) manzana4_estado = 0;
+    
+    // Verificar si come manzana 
+    if (cabeza_x == manzana1_x && cabeza_y == manzana1_y && manzana1_estado) {
+        manzana1_estado = 0;
+        comio_manzana = 1;
+    }
+    if (cabeza_x == manzana2_x && cabeza_y == manzana2_y && manzana2_estado) {
+        manzana2_estado = 0;
+        comio_manzana = 1;
+    }
+    if (cabeza_x == manzana3_x && cabeza_y == manzana3_y && manzana3_estado) {
+        manzana3_estado = 0;
+        comio_manzana = 1;
+    }
+    if (cabeza_x == manzana4_x && cabeza_y == manzana4_y && manzana4_estado) {
+        manzana4_estado = 0;
+        comio_manzana = 1;
+    }
+    
+    // Si comió manzana, enviar pulso
+    if (comio_manzana) {
+        enviar_pulso_sonido();
+    }
+    
     cuerpo_x = temp_cabeza_x;
     cuerpo_y = temp_cabeza_y;
     cola_x = temp_cuerpo_x;
@@ -187,16 +222,15 @@ void cambiar_direccion(uint8_t nueva_direccion) {
 }
 
 void todos_los_leds_on(void) {
-    // Prender todos los LEDs de la matriz para siempre (hasta reinicio)
+    // Enviar señal de juego completado
+    enviar_pulsos_sonido(3);
+    
     while (1) {
-        PORTB = 0x00; // Todas las columnas activas (cátodo común)
-        PORTD = 0xFF; // Todas las filas activas
-        // Si presionan el botón de reinicio (PC4), sale del ciclo y reinicia el juego
+        PORTB = 0x00;
+        PORTD = 0xFF;
         if ((PINC & (1 << 4)) == 0) {
             _delay_ms(80);
-            while ((PINC & (1 << 4)) == 0) {
-                // Mantener encendido hasta soltar
-            }
+            while ((PINC & (1 << 4)) == 0);
             _delay_ms(80);
             break;
         }
@@ -208,17 +242,15 @@ void todos_los_leds_on(void) {
 int main(void) {
     DDRB = 0xFF;
     DDRD = 0xFF;
-    DDRC = 0x00;
-    PORTC = 0x1F; // PC0-PC4 pull-up
+    DDRC = 0x20;  // PC5 como salida, PC0-PC4 como entradas
+    PORTC = 0x1F; // PC0-PC4 pull-up, PC5 = LOW inicialmente
 
-    // ---- Esperar inicio (PC4 presionado), mantén la matriz apagada ----
+    // Esperar inicio
     PORTB = 0xFF;
     PORTD = 0x00;
-    while ((PINC & (1 << 4)) != 0) {
-        // No hagas nada, todo apagado hasta presionar iniciar
-    }
-    _delay_ms(80); // Antirebote
-    while ((PINC & (1 << 4)) == 0); // Esperar que lo suelten
+    while ((PINC & (1 << 4)) != 0);
+    _delay_ms(80);
+    while ((PINC & (1 << 4)) == 0);
     _delay_ms(80);
 
     reiniciar_juego();
@@ -228,11 +260,10 @@ int main(void) {
     uint8_t cambiar_nivel = 0;
 
     while (1) {
-        // --- Botón PC4 para reiniciar ---
+        // Botón PC4 para reiniciar
         if ((PINC & (1 << 4)) == 0) {
             _delay_ms(80);
             while ((PINC & (1 << 4)) == 0) {
-                // No muestres nada mientras está presionado para reinicio
                 PORTB = 0xFF;
                 PORTD = 0x00;
             }
@@ -243,7 +274,6 @@ int main(void) {
             cambiar_nivel = 0;
             continue;
         }
-        // --------------------------------
 
         if (cambiar_nivel) {
             if (nivel_actual == 1) nivel_2();
@@ -263,9 +293,7 @@ int main(void) {
                 if (nivel_actual == 1 && !manzana1_estado && !manzana2_estado) cambiar_nivel = 1;
                 if (nivel_actual == 2 && !manzana1_estado && !manzana2_estado && !manzana3_estado) cambiar_nivel = 1;
                 if (nivel_actual == 3 && !manzana1_estado && !manzana2_estado && !manzana3_estado && !manzana4_estado) {
-                    // ------------------- FIN DEL JUEGO -------------------
                     todos_los_leds_on();
-                    // Luego del reinicio, vuelve a mostrar el nivel 1
                     reiniciar_juego();
                     mostrar_numero_nivel(1);
                     contador = 0;
