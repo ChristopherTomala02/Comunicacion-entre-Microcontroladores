@@ -1,0 +1,46 @@
+void playNote(unsigned int frequency, unsigned int duration) {
+    Sound_Play(frequency, duration / 10);
+    Delay_ms(25); // Pausa reducida
+}
+
+void musica_fondo() {
+    // Escala: Do Re Mi Fa Sol
+    playNote(523, 50);  // Do
+    playNote(587, 50);  // Re
+    playNote(659, 50);  // Mi
+    playNote(698, 50);  // Fa
+    playNote(784, 50);  // Sol
+}
+
+void tocar_notas_manzana() {
+
+    Sound_Play(587, 100);
+}
+
+void musica_fin_juego() {
+
+    Sound_Play(784, 1000);
+}
+
+void main() {
+    ANSEL = 0;
+    ANSELH = 0;
+    C1ON_bit = 0;
+    C2ON_bit = 0;
+
+    TRISD = 0xFF;
+    TRISC = 0xFB;
+
+    Sound_Init(&PORTC, 3);
+
+    while (1) {
+        if (PORTD.F5 == 1) {
+            Delay_ms(50);
+            while (PORTD.F5 == 1);
+            tocar_notas_manzana();
+            Delay_ms(100);
+        } else {
+            musica_fondo();
+        }
+    }
+}
